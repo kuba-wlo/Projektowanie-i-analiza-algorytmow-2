@@ -1,0 +1,90 @@
+#include "BoardWidget.h"
+
+#include <QMouseEvent>
+#include <QPainter>
+
+#include <algorithm>
+
+using ttt::Cell;
+
+BoardWidget::BoardWidget(QWidget* parent) : QWidget(parent) {
+    setMinimumSize(300, 300);
+}
+
+void BoardWidget::setGame(const ttt::Game* game) {
+    game_ = game;
+    update();
+}
+
+int BoardWidget::cellSize() const {
+    if (!game_) {
+        return 0;
+    }
+    int n = game_->board().size();
+    return std::min(width(), height()) / std::max(1, n);
+}
+
+void BoardWidget::paintEvent(QPaintEvent*) {
+    QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
+    painter.fillRect(rect(), Qt::white);
+
+    if (!game_) {
+        return;
+    }
+
+    const int n = game_->board().size();
+    const int cs = cellSize();
+    const int boardPx = cs * n;
+
+    // Siatka.
+    QPen gridPen(Qt::gray);
+    gridPen.setWidth(2);
+    painter.setPen(gridPen);
+    for (int i = 0; i <= n; ++i) {
+        painter.drawLine(0, i * cs, boardPx, i * cs);
+        painter.drawLine(i * cs, 0, i * cs, boardPx);
+    }
+
+    // Znaki.
+    const int margin = cs / 5;
+    for (int r = 0; r < n; ++r) {
+        for (int c = 0; c < n; ++c) {
+            Cell value = game_->board().at(r, c);
+            if (value == Cell::Empty) {
+                continue;
+            }
+            QRect cellRect(c * cs + margin, r * cs + margin, cs - 2 * margin,
+                           cs - 2 * margin);
+            if (value == Cell::X) {
+                QPen pen(QColor(60, 110, 200));
+                pen.setWidth(std::max(2, cs / 12));
+                painter.setPen(pen);
+                painter.drawLine(cellRect.topLeft(), cellRect.bottomRight());
+                painter.drawLine(cellRect.topRight(), cellRect.bottomLeft());
+            } else {
+                QPen pen(QColor(210, 80, 80));
+                pen.setWidth(std::max(2, cs / 12));
+                painter.setPen(pen);
+                painter.drawEllipse(cellRect);
+            }
+        }
+    }
+}
+
+void BoardWidget::mousePressEvent(QMouseEvent* event) {
+    if (!game_) {
+        return;
+    }
+    const int cs = cellSize();
+    if (cs <= 0) {
+        return;
+    }
+    const int n = game_->board().size();
+    const int col = event->position().x() / cs;
+    const int row = event->position().y() / cs;
+
+    if (row >= 0 && row < n && col >= 0 && col < n) {
+        emit cellClicked(row, col);
+    }
+}
