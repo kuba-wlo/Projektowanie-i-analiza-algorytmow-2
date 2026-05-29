@@ -29,6 +29,12 @@ add_library(ttt_core STATIC
 target_include_directories(ttt_core PUBLIC src/core)
 target_compile_features(ttt_core PUBLIC cxx_std_17)
 
+# --- Wersja konsolowa (do szybkiego testowania logiki i AI) ---
+add_executable(tictactoe_console
+    src/console/main.cpp
+)
+target_link_libraries(tictactoe_console PRIVATE ttt_core)
+
 # --- Wersja graficzna (Qt 6 Widgets) ---
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt_standard_project_setup()
