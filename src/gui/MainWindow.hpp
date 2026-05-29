@@ -1,7 +1,7 @@
 #pragma once
 
-#include "AIPlayer.h"
-#include "Game.h"
+#include "AIPlayer.hpp"
+#include "Game.hpp"
 
 #include <QMainWindow>
 

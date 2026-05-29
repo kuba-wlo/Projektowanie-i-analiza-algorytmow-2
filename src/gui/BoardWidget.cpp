@@ -1,4 +1,4 @@
-#include "BoardWidget.h"
+#include "BoardWidget.hpp"
 
 #include <QMouseEvent>
 #include <QPainter>

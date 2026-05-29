@@ -2,16 +2,16 @@
 # Budowany jako biblioteka statyczna, aby GUI (i przyszle testy)
 # mogly linkowac sie do tego samego kodu.
 add_library(ttt_core STATIC
-    Types.h
-    Board.h
+    Types.hpp
+    Board.hpp
     Board.cpp
-    GameRules.h
+    GameRules.hpp
     GameRules.cpp
-    Game.h
+    Game.hpp
     Game.cpp
-    Player.h
-    HumanPlayer.h
-    AIPlayer.h
+    Player.hpp
+    HumanPlayer.hpp
+    AIPlayer.hpp
     AIPlayer.cpp
 )
 

@@ -9,9 +9,9 @@ qt_standard_project_setup()
 
 qt_add_executable(tictactoe_gui
     main.cpp
-    MainWindow.h
+    MainWindow.hpp
     MainWindow.cpp
-    BoardWidget.h
+    BoardWidget.hpp
     BoardWidget.cpp
 )
 

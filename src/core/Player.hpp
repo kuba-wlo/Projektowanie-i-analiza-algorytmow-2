@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Board.h"
-#include "GameRules.h"
-#include "Types.h"
+#include "Board.hpp"
+#include "GameRules.hpp"
+#include "Types.hpp"
 
 namespace ttt {
 

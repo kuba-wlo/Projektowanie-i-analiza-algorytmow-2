@@ -1,4 +1,4 @@
-#include "AIPlayer.h"
+#include "AIPlayer.hpp"
 
 #include <algorithm>
 #include <limits>

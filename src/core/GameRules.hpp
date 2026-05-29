@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Board.h"
-#include "Types.h"
+#include "Board.hpp"
+#include "Types.hpp"
 
 namespace ttt {
 

@@ -1,6 +1,6 @@
-#include "MainWindow.h"
+#include "MainWindow.hpp"
 
-#include "BoardWidget.h"
+#include "BoardWidget.hpp"
 
 #include <QCheckBox>
 #include <QHBoxLayout>

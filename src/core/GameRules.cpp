@@ -1,4 +1,4 @@
-#include "GameRules.h"
+#include "GameRules.hpp"
 
 namespace ttt {
 
