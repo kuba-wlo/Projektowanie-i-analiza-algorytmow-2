@@ -6,6 +6,7 @@
 #include "Game.hpp"
 #include "Types.hpp"
 
+#include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <string>
@@ -47,12 +48,18 @@ void printBoard(const Board& board) {
 }
 
 // Wczytuje liczbe calkowita z zakresu [min, max], ponawia przy bledzie.
+// Przy koncu wejscia (EOF) konczy program, by nie zapetlic sie w nieskonczonosc.
 int readInt(const std::string& prompt, int min, int max) {
     int value;
     while (true) {
         std::cout << prompt;
-        if (std::cin >> value && value >= min && value <= max) {
-            return value;
+        if (std::cin >> value) {
+            if (value >= min && value <= max) {
+                return value;
+            }
+        } else if (std::cin.eof()) {
+            std::cout << "\nKoniec wejscia - zamykam gre.\n";
+            std::exit(0);
         }
         std::cin.clear();
         std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
