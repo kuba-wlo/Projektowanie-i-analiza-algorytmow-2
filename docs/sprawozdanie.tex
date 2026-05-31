@@ -1,0 +1,381 @@
+\input{header}
+
+% Pakiety do ladnego skladu pseudokodu (ladowane po headerze, wciaz w preambule).
+% Jesli header.sty juz je laduje, ponowne \usepackage jest bezpieczne.
+\usepackage{listings}
+\usepackage{xcolor}
+
+\lstdefinestyle{pseudo}{
+    basicstyle=\ttfamily\small,
+    keywordstyle=\bfseries,
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    frame=single,
+    framesep=6pt,
+    breaklines=true,
+    captionpos=b,
+    keywords={funkcja, jezeli, wpp, zwroc, dla, kazdego, dopoki, oraz, lub, nie}
+}
+
+% Bez wcięć akapitowych - akapity oddzielone odstępem.
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+
+\begin{document}
+\frontpage{%
+    Projektowanie i analiza algorytmów
+}{%
+    Informatyczne Systemy Automatyki
+}{%
+    środa TP $17^{05}-18^{45}$
+}{-}{-}{%
+    Jakub Włodarski 284184%
+}{%
+    https://github.com/kuba-wlo/Projektowanie-i-analiza-algorytmow-2%
+}{15.06.2026 r}{%
+    2
+}
+\pagestyle{empty}
+\hypersetup{hidelinks}
+\tableofcontents
+\newpage
+\pagestyle{plain}
+
+
+\section{Wprowadzenie}
+
+Kółko i krzyżyk należy do najprostszych gier o sumie zerowej z pełną informacją: obaj gracze
+w każdym momencie znają cały stan rozgrywki, a wygrana jednego z nich oznacza przegraną
+drugiego. W klasycznej odmianie partię toczy się na planszy $3\times3$, gdzie celem jest
+ustawienie trzech własnych znaków w jednej linii. Przestrzeń stanów jest tu na tyle mała,
+że grę da się rozwiązać w całości -- przy optymalnej grze obu stron partia zawsze kończy się
+remisem.
+
+Celem niniejszego projektu nie było jednak odtworzenie samego wariantu $3\times3$, lecz
+zbudowanie jego \textbf{uogólnienia}, w którym to użytkownik decyduje o rozmiarze kwadratowej
+planszy oraz o liczbie znaków w rzędzie wymaganej do zwycięstwa. Dzięki temu klasyczne
+$3\times3$ staje się tylko jednym z wielu możliwych ustawień (program obsługuje plansze aż do
+$20\times20$). Wraz ze wzrostem planszy przestrzeń stanów rośnie wykładniczo i gra przestaje
+być rozwiązywalna metodą siłową -- to właśnie ten fakt nadaje projektowi charakter
+algorytmiczny.
+
+Przeciwnik komputerowy został oparty na algorytmie \textbf{MinMax z odcinaniem alfa-beta},
+wzbogaconym o heurystyczną funkcję oceny, ograniczenie zbioru rozważanych pól oraz adaptacyjne
+sterowanie głębokością przeszukiwania. Te trzy techniki wspólnie utrzymują grywalność również
+na dużych planszach, gdzie samo przeszukiwanie pełnego drzewa byłoby nieobliczalne. Zgodnie
+z listą tematów wybrano zadanie \emph{Kółko i krzyżyk} (ocena maksymalna 4,5), a dodatkowo
+przygotowano wersję graficzną opartą na bibliotece Qt~6 (podnoszącą maksymalną ocenę do 5,0).
+
+Całość napisano w języku \texttt{C++17}. Logikę gry oraz sztuczną inteligencję wydzielono
+do osobnej biblioteki statycznej, z której korzystają dwie niezależne nakładki: graficzna
+(Qt~6) oraz konsolowa (przeznaczona do szybkiego testowania).
+
+
+\section{Opis gry}
+
+\subsection{Uogólnione zasady}
+
+Plansza jest kwadratem o boku $N$, gdzie $N \in \{3,\dots,20\}$. Każde pole może być puste albo
+zajęte znakiem jednego z graczy ($\times$ lub $\circ$). Gracze wykonują ruchy naprzemiennie,
+przy czym partię zawsze rozpoczyna znak $\times$. Zwycięża ten, kto jako pierwszy ustawi $k$
+swoich znaków w nieprzerwanej linii, gdzie długość wygrywającej linii $k$ jest parametrem
+konfigurowanym przez użytkownika i spełnia $3 \le k \le N$. Linia może biec w jednym z czterech
+kierunków: poziomo, pionowo oraz po obu przekątnych. Jeśli wszystkie pola zostaną zajęte, a żaden
+z graczy nie zbuduje wygrywającej linii, partia kończy się remisem.
+
+Konfiguracja jest sanityzowana jeszcze przed rozpoczęciem rozgrywki: długość linii $k$ jest
+zaciskana do przedziału $[1, N]$ (\texttt{std::clamp}), dzięki czemu niemożliwe jest zażądanie
+linii dłuższej niż bok planszy, a samo GUI ogranicza wybór do sensownego zakresu $[3, N]$.
+
+\subsection{Tryby gry i konfiguracja}
+
+Program udostępnia następujące ustawienia rozgrywki:
+\begin{itemize}
+    \item rozmiar planszy $N$ (od 3 do 20),
+    \item długość wygrywającej linii $k$ (od 3 do $N$),
+    \item znak gracza: $\times$ (rozpoczyna) lub $\circ$ (wówczas partię rozpoczyna komputer),
+    \item tryb gry: dwóch graczy przy jednym komputerze albo gra przeciwko sztucznej inteligencji,
+    \item poziom trudności AI: łatwy, średni lub trudny,
+    \item rozpoczęcie nowej partii z bieżącą konfiguracją.
+\end{itemize}
+
+Ponieważ pierwszy ruch zawsze należy do znaku $\times$, wybór znaku $\circ$ przez człowieka jest
+równoznaczny z oddaniem otwarcia komputerowi.
+
+
+\section{Architektura programu}
+
+Aplikację rozbito na trzy moduły, co pozwala w pełni oddzielić logikę gry od warstwy prezentacji.
+Wspólny rdzeń (logika + AI) zebrano w bibliotece statycznej \texttt{ttt\_core}; korzystają z niej
+zarówno interfejs graficzny, jak i wersja konsolowa, dzięki czemu obie nakładki dzielą dokładnie
+ten sam, raz przetestowany kod reguł i algorytmu.
+
+\begin{table}[H]
+\centering
+\caption{Podział projektu na moduły}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Katalog} & \textbf{Artefakt} & \textbf{Zawartość}\\
+\midrule
+\texttt{src/core/}    & biblioteka \texttt{ttt\_core} & logika gry oraz algorytm AI (bez GUI)\\
+\texttt{src/gui/}     & \texttt{tictactoe\_gui}       & interfejs graficzny w Qt~6\\
+\texttt{src/console/} & \texttt{tictactoe\_console}   & wersja tekstowa do testowania\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Najważniejsze klasy rdzenia i ich odpowiedzialności:
+\begin{itemize}
+    \item \texttt{Board} -- przechowuje stan kwadratowej planszy $N\times N$; zna wyłącznie
+          rozmieszczenie znaków i nie wie nic o warunku zwycięstwa.
+    \item \texttt{GameRules} -- wykrywa wygraną (zliczanie znaków w linii w czterech kierunkach)
+          i wyznacza status gry; celowo oddzielona od planszy, by warunek zwycięstwa można było
+          zmieniać niezależnie od reprezentacji pól.
+    \item \texttt{Game} -- kontroler rozgrywki spinający planszę, zasady i kolejność ruchów;
+          operuje wyłącznie na znakach, nie wie nic o graczach ani o GUI.
+    \item \texttt{Player} -- abstrakcyjny interfejs gracza; jego polimorficznymi implementacjami
+          są \texttt{HumanPlayer} (ruch dostarcza interfejs) oraz \texttt{AIPlayer}
+          (ruch wylicza algorytm).
+\end{itemize}
+
+Takie rozwarstwienie sprawia, że nakładka jedynie odpytuje obiekt \texttt{Game} o stan i przekazuje
+mu ruchy, natomiast cała logika decyzyjna pozostaje zamknięta w bibliotece. Wymiana interfejsu
+(np. konsola zamiast Qt) nie wymaga żadnych zmian w regułach gry ani w AI.
+
+
+\section{Logika gry i wykrywanie wygranej}
+
+Sercem warstwy reguł jest klasa \texttt{GameRules}. Po każdym ruchu trzeba ustalić, czy nie
+powstała właśnie wygrywająca linia. Zamiast przeglądać całą planszę, wykrywanie wygranej zostało
+zrealizowane \textbf{inkrementalnie}: sprawdzane jest tylko otoczenie ostatnio postawionego znaku.
+Dla każdego z czterech kierunków funkcja \texttt{countInLine} zlicza nieprzerwany ciąg znaków
+przechodzący przez ostatnie pole -- w obie strony, włącznie z samym polem. Jeśli w którymkolwiek
+kierunku długość ciągu osiągnie $k$, ruch kończy partię zwycięstwem.
+
+Takie podejście jest istotnie tańsze niż pełny przegląd planszy: skoro tylko ostatni ruch mógł
+utworzyć nową linię, wystarczy zbadać linie przechodzące właśnie przez to pole. Koszt pojedynczego
+sprawdzenia jest rzędu $O(k)$ na kierunek, czyli $O(k)$ łącznie, zamiast $O(N^{2}k)$ przy naiwnym
+skanowaniu całej planszy. Pełny przegląd (\texttt{hasWon}) pozostaje dostępny jako wariant
+pomocniczy, używany m.in. wtedy, gdy nie jest znany ostatni ruch.
+
+
+\section{Zastosowane techniki sztucznej inteligencji}
+
+Logikę przeciwnika komputerowego zamknięto w klasie \texttt{AIPlayer}, która łączy kilka technik:
+przeszukiwanie drzewa gry algorytmem MinMax z odcinaniem alfa-beta, ograniczenie zbioru
+rozważanych pól, adaptacyjny dobór głębokości, heurystyczną ocenę pozycji oraz losowanie spośród
+równorzędnych ruchów.
+
+\subsection{Algorytm MinMax z odcinaniem alfa-beta}
+
+MinMax to klasyczny algorytm wyznaczania optymalnego ruchu w grach o sumie zerowej. Przeszukuje
+drzewo możliwych przebiegów partii, naprzemiennie maksymalizując wynik gracza AI i minimalizując
+wynik przeciwnika (przy założeniu, że przeciwnik również gra optymalnie). Odcinanie alfa-beta
+utrzymuje dwie granice -- $\alpha$ (najlepszy gwarantowany wynik gracza maksymalizującego) oraz
+$\beta$ (najlepszy gwarantowany wynik minimalizującego) -- i przerywa analizę gałęzi, gdy
+$\beta \le \alpha$, ponieważ taka gałąź nie może już wpłynąć na ostateczny wybór ruchu. Pozwala to
+pominąć znaczną część drzewa bez zmiany wyniku.
+
+Aby AI preferowało szybkie wygrane, od wartości wygranej odejmowana jest bieżąca głębokość:
+natychmiastowa wygrana jest premiowana wyżej niż taka sama wygrana osiągnięta głębiej w drzewie.
+Symetrycznie -- przegraną AI stara się odwlec jak najdłużej.
+
+\begin{lstlisting}[style=pseudo, caption={Szkielet MinMaxa z odcinaniem alfa-beta (uproszczony).}, label={lst:minimax}]
+funkcja minimax(plansza, glebokosc, alpha, beta, doRuchu, limit):
+    jezeli plansza pelna: zwroc 0            # remis
+    jezeli glebokosc >= limit: zwroc evaluate(plansza)
+    maks = (doRuchu == AI)
+    najlepszy = maks ? -INF : +INF
+    dla kazdego ruchu w kandydaci(plansza):
+        ustaw ruch
+        jezeli ruch wygrywa:
+            wynik = maks ? (WIN - glebokosc) : -(WIN - glebokosc)
+        wpp:
+            wynik = minimax(plansza, glebokosc+1, alpha, beta,
+                            przeciwnik(doRuchu), limit)
+        cofnij ruch
+        jezeli maks: najlepszy = max(najlepszy, wynik); alpha = max(alpha, najlepszy)
+        wpp:         najlepszy = min(najlepszy, wynik); beta  = min(beta,  najlepszy)
+        jezeli beta <= alpha: zwroc najlepszy   # odciecie alfa-beta
+    zwroc najlepszy
+\end{lstlisting}
+
+\subsection{Ograniczenie zbioru kandydatów}
+
+Współczynnik rozgałęzienia drzewa gry równa się liczbie wolnych pól -- dla planszy $20\times20$
+daje to na starcie aż $400$ możliwych ruchów, przez co pełne drzewo jest nieobliczalne. Aby temu
+zapobiec, AI rozważa wyłącznie pola \emph{sąsiadujące} (w promieniu jednego pola) z już
+postawionymi znakami. Ruchy w odległych, pustych obszarach nie mają znaczenia taktycznego, więc
+ich pominięcie nie pogarsza jakości gry, a drastycznie zmniejsza rozgałęzienie. Na pustej planszy
+zbiorem kandydatów jest samo pole środkowe. W końcówkach (do dziewięciu wolnych pól) rozważane są
+wszystkie wolne pola, co umożliwia pełne, dokładne przeszukanie.
+
+\subsection{Adaptacyjna głębokość przeszukiwania}
+
+Nawet po ograniczeniu kandydatów drzewo na dużych planszach pozostaje kosztowne, dlatego głębokość
+przeszukiwania dobierana jest do bieżącego rozgałęzienia: im więcej ruchów do rozważenia, tym płycej
+schodzi przeszukiwanie. Do dziewięciu wolnych pól (małe plansze, końcówki) drzewo przeszukiwane jest
+w całości, z dokładnością do limitu wynikającego z poziomu trudności. Po osiągnięciu limitu pozycja
+jest oceniana funkcją heurystyczną, zamiast schodzić przeszukiwaniem do liści.
+
+\begin{table}[H]
+\centering
+\caption{Górny limit głębokości w zależności od liczby kandydatów (rozgałęzienia)}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Liczba kandydatów} & \textbf{Limit głębokości}\\
+\midrule
+$\le 6$  & 6\\
+$\le 12$ & 4\\
+$\le 24$ & 3\\
+$> 24$   & 2\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Heurystyczna funkcja oceny}
+
+Gdy limit głębokości zostanie osiągnięty, pozycja pozostaje nierozstrzygnięta i trzeba ją oszacować.
+Funkcja oceny przesuwa ,,okno'' długości $k$ po wszystkich liniach planszy (we wszystkich czterech
+kierunkach) i klasyfikuje każde okno:
+\begin{itemize}
+    \item okno \emph{mieszane} (zawierające znaki obu graczy) jest martwe -- żaden gracz nie może
+          go już dokończyć -- więc wnosi $0$ punktów,
+    \item okno zawierające wyłącznie znaki AI wnosi punkty dodatnie,
+    \item okno zawierające wyłącznie znaki przeciwnika wnosi punkty ujemne.
+\end{itemize}
+Wartość okna rośnie wykładniczo wraz z liczbą znaków (mnożnik $10$ na każdy kolejny znak), co mocno
+premiuje linie bliskie ukończenia. Wartość jest ograniczona z góry (do $100\,000$), aby ocena
+heurystyczna nigdy nie została pomylona z rzeczywistą wygraną (oznaczaną wartością $10^{6}$).
+
+\subsection{Wybór otwarcia i poziomy trudności}
+
+Poziom trudności steruje górnym limitem głębokości przeszukiwania (\texttt{maxDepth}). Na poziomie
+łatwym AI patrzy w praktyce tylko na pozycję bezpośrednio po własnym ruchu (nie symuluje odpowiedzi
+przeciwnika), natomiast na poziomie trudnym przeszukuje na tyle głęboko, że na planszy $3\times3$
+gra idealnie.
+
+\begin{table}[H]
+\centering
+\caption{Odwzorowanie poziomu trudności na limit głębokości}
+\begin{tabular}{@{}lc@{}}
+\toprule
+\textbf{Poziom} & \textbf{\texttt{maxDepth}}\\
+\midrule
+łatwy   & 1\\
+średni  & 4\\
+trudny  & 9\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Od poziomu zależy także \emph{otwarcie}, gdy AI rusza jako pierwsze. Na poziomie trudnym AI zawsze
+gra w środek planszy -- pole leżące na największej liczbie linii, a więc najlepsze otwarcie. Na
+poziomie średnim losuje środek lub jedno z jego sąsiednich pól, a na łatwym -- dowolne pole. Dzięki
+temu na niższych poziomach kolejne partie nie zaczynają się zawsze tak samo.
+
+\subsection{Losowanie spośród równorzędnych ruchów}
+
+Gdy kilka ruchów uzyskuje identyczną, najlepszą ocenę, AI losuje jeden z nich (generatorem
+\texttt{std::mt19937}). Dzięki temu kolejne partie różnią się od siebie, mimo że gra pozostaje
+optymalna. Aby pula ,,równorzędnych'' ruchów była rzetelna, każdy ruch w korzeniu drzewa oceniany
+jest pełnym oknem $(-\infty, +\infty)$, bez zacieśniania $\alpha$ między kolejnymi ruchami.
+W przeciwnym razie odcięcia alfa-beta zwracałyby dla części ruchów jedynie oszacowanie (granicę)
+zamiast dokładnej wartości i do puli trafiałyby ruchy faktycznie gorsze. Odcięcia pozostają
+natomiast aktywne w głębszych węzłach drzewa, gdzie służą wyłącznie przyspieszeniu.
+
+\subsection{Analiza złożoności}
+
+Złożoność czasowa czystego algorytmu MinMax wynosi $O(b^{d})$, gdzie $b$ to współczynnik
+rozgałęzienia, a $d$ -- głębokość przeszukiwania. W przypadku optymistycznym (dobre uporządkowanie
+ruchów) odcinanie alfa-beta redukuje ją do $O(b^{d/2})$, co odpowiada możliwości przeszukania
+dwukrotnie głębszego drzewa w tym samym czasie. W projekcie obie składowe są dodatkowo kontrolowane:
+ograniczenie kandydatów do sąsiedztwa zmniejsza efektywne $b$, a adaptacyjny dobór głębokości
+zmniejsza $d$ tam, gdzie $b$ jest duże. Koszt pojedynczej oceny heurystycznej jest rzędu
+$O(N^{2}k)$ -- dla każdego z $O(N^{2})$ pól startowych i czterech kierunków przeglądane jest okno
+długości $k$. Z kolei inkrementalne wykrywanie wygranej po ruchu kosztuje jedynie $O(k)$, co czyni
+je tanim również w węzłach przeszukiwania.
+
+
+\section{Interfejs graficzny i wersja konsolowa}
+
+\subsection{Wersja graficzna (Qt~6)}
+
+Interfejs graficzny zbudowano w oparciu o moduł \texttt{Widgets} biblioteki Qt~6. Okno główne
+udostępnia panel konfiguracji (rozmiar planszy, długość linii, znak gracza, poziom trudności,
+tryb gry z AI), planszę oraz pasek statusu informujący o przebiegu partii. Plansza jest responsywna
+-- skaluje się wraz z oknem, pozostając kwadratowa i wyśrodkowana. Kliknięcie w wolne pole wykonuje
+ruch gracza, po czym w trybie z AI ruch wylicza \texttt{AIPlayer}. Widget planszy
+(\texttt{BoardWidget}) jedynie odpytuje stan z obiektu \texttt{Game} i go rysuje, a o kliknięciach
+informuje sygnałem \texttt{cellClicked}.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{plansza.png}
+\caption{Okno główne aplikacji -- panel konfiguracji i plansza.}
+\label{fig:gui-konfig}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{gra.png}
+\caption{Rozgrywka przeciwko sztucznej inteligencji.}
+\label{fig:gui-gra}
+\end{figure}
+
+\subsection{Wersja konsolowa}
+
+Wersja tekstowa korzysta z tej samej biblioteki \texttt{ttt\_core}, co interfejs graficzny.
+Pozwala szybko sprawdzić zasady i zachowanie AI bez uruchamiania okna Qt: rysuje planszę z indeksami
+wierszy i kolumn oraz wczytuje ruchy z klawiatury, walidując zakres wprowadzanych wartości. Była ona
+podstawowym narzędziem do weryfikacji poprawności rdzenia jeszcze przed podłączeniem warstwy
+graficznej.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.60\textwidth]{konsola.png}
+\caption{Wersja konsolowa -- plansza z indeksami pól.}
+\label{fig:konsola}
+\end{figure}
+
+
+\section{Podsumowanie i wnioski}
+
+W ramach projektu zaimplementowano uogólnioną grę w kółko i krzyżyk wraz z przeciwnikiem sterowanym
+przez sztuczną inteligencję. Gracz może swobodnie definiować rozmiar planszy oraz długość
+wygrywającej linii, dzięki czemu klasyczne $3\times3$ jest tylko jednym z możliwych wariantów.
+Przeciwnik AI oparto na algorytmie MinMax z odcinaniem alfa-beta.
+
+Najważniejszym wnioskiem płynącym z realizacji jest to, że sam MinMax -- choć gwarantuje optymalną
+grę -- jest niepraktyczny dla większych plansz ze względu na wykładniczy wzrost drzewa gry.
+Kluczowe okazało się połączenie go z trzema technikami ograniczającymi koszt obliczeń: zawężeniem
+zbioru rozważanych pól do sąsiedztwa już postawionych znaków, adaptacyjnym doborem głębokości do
+bieżącego rozgałęzienia oraz heurystyczną oceną pozycji w węzłach, do których przeszukiwanie nie
+dochodzi. Dzięki nim AI pozostaje grywalne nawet na planszach $20\times20$, jednocześnie grając
+idealnie na planszy $3\times3$ na najwyższym poziomie trudności.
+
+Na większych planszach faktyczna głębokość przeszukiwania bywa ograniczana przez adaptację, przez co
+różnica między poziomami trudności jest tam mniej wyraźna -- jest to świadomy kompromis między siłą
+gry a czasem odpowiedzi. Wprowadzenie poziomów trudności oraz losowania spośród równorzędnych ruchów
+istotnie poprawiło odbiór gry: partie się nie powtarzają, a przeciwnika można dopasować do
+umiejętności gracza.
+
+Możliwe kierunki dalszego rozwoju to wprowadzenie tablicy transpozycji (spamiętywanie ocenionych
+pozycji), porządkowanie ruchów zwiększające skuteczność odcięć alfa-beta oraz pogłębianie iteracyjne
+z limitem czasowym zamiast stałego limitu głębokości.
+
+
+\begin{thebibliography}{9}
+\bibitem{cormen} T.~H.~Cormen, C.~E.~Leiserson, R.~L.~Rivest, C.~Stein,
+\emph{Wprowadzenie do algorytmów}, WNT, Warszawa, 2012.
+\bibitem{russell} S.~Russell, P.~Norvig,
+\emph{Artificial Intelligence: A Modern Approach}, 4th ed., Pearson, 2021
+(rozdział o przeszukiwaniu drzew gry: MinMax i odcinanie alfa-beta).
+\bibitem{knuth} D.~E.~Knuth, R.~W.~Moore,
+\emph{An Analysis of Alpha-Beta Pruning}, Artificial Intelligence, vol.~6, no.~4, s.~293--326, 1975.
+\bibitem{qt} Dokumentacja Qt~6 -- moduł Widgets, \url{https://doc.qt.io/}.
+\bibitem{cppref} Dokumentacja biblioteki standardowej C++, \url{https://en.cppreference.com/}.
+\end{thebibliography}
+
+\end{document}
