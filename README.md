@@ -8,9 +8,10 @@ oraz **liczbę znaków w rzędzie** potrzebną do wygranej, dzięki czemu klasyc
 tylko jednym z możliwych wariantów (obsługiwane są plansze do 20×20).
 
 AI wykorzystuje algorytm **MinMax z odcinaniem alfa-beta**, ograniczeniem głębokości
-przeszukiwania oraz heurystyczną oceną pozycji. Logika gry jest oddzielona od interfejsu
-i zebrana we wspólnej bibliotece statycznej, z której korzystają dwie nakładki: graficzna
-(**Qt 6**) oraz konsolowa (do szybkiego testowania).
+przeszukiwania oraz heurystyczną oceną pozycji. Gracz może wybrać swój znak (X lub O) oraz
+jeden z trzech **poziomów trudności**. Logika gry jest oddzielona od interfejsu i zebrana
+we wspólnej bibliotece statycznej, z której korzystają dwie nakładki: graficzna (**Qt 6**)
+oraz konsolowa (do szybkiego testowania).
 
 ## Cel projektu
 
@@ -36,8 +37,17 @@ wygrana jest premiowana wyżej niż wygrana osiągnięta głębiej w drzewie.
 Aby drzewo nie rosło wykładniczo wraz z rozmiarem planszy, AI rozważa wyłącznie pola
 sąsiadujące z już postawionymi znakami (na pustej planszy – środek). Dodatkowo głębokość
 przeszukiwania jest dobierana do liczby kandydatów: małe plansze i końcówki (do ~9 wolnych
-pól) przeszukiwane są w całości – dzięki czemu na 3×3 AI gra idealnie – a na dużych
+pól) przeszukiwane są w całości (z dokładnością do wybranego poziomu trudności), a na dużych
 planszach przeszukiwanie schodzi tym płycej, im więcej jest ruchów do rozważenia.
+
+### Poziom trudności
+
+Poziom trudności ustawia górny limit głębokości przeszukiwania (`maxDepth`): łatwy `1`,
+średni `4`, trudny `9`. Na łatwym AI patrzy zasadniczo tylko na pozycję po własnym ruchu
+(nie symuluje odpowiedzi przeciwnika), na trudnym przeszukuje na tyle głęboko, że na planszy
+3×3 gra idealnie. Na większych planszach faktyczna głębokość bywa dodatkowo ograniczana
+przez adaptację opisaną wyżej, więc różnica między poziomami jest tam mniejsza (kompromis
+między siłą gry a czasem odpowiedzi).
 
 ### Heurystyczna ocena pozycji
 
@@ -50,7 +60,10 @@ wykładniczo wraz z liczbą znaków, co premiuje linie bliskie ukończenia.
 ### Losowanie spośród równorzędnych ruchów
 
 Gdy kilka ruchów uzyskuje identyczną, najlepszą ocenę, AI losuje jeden z nich. Dzięki temu
-kolejne partie nie wyglądają identycznie, mimo że gra pozostaje optymalna.
+kolejne partie nie wyglądają identycznie, mimo że gra pozostaje optymalna. Aby pula
+„równorzędnych" ruchów była rzetelna, każdy ruch w korzeniu drzewa oceniany jest pełnym
+oknem (bez odcięć alfa-beta na tym poziomie) – inaczej trafiałyby tam ruchy z jedynie
+oszacowaną, a nie dokładną wartością.
 
 ## Struktura projektu
 
@@ -97,9 +110,15 @@ nigdy nie przekracza rozmiaru planszy.
 ### Wersja graficzna (Qt 6)
 
 Po uruchomieniu okno udostępnia panel konfiguracji (rozmiar planszy, liczba znaków
-w rzędzie, gra z AI), planszę oraz pasek statusu. Kliknięcie w wolne pole wykonuje ruch
-gracza, po czym – w trybie z AI – ruch wylicza `AIPlayer`. `BoardWidget` jedynie odpytuje
-stan z `Game` i rysuje go, a o kliknięciach informuje sygnałem `cellClicked`.
+w rzędzie, znak gracza X/O, poziom trudności, tryb gry z AI), planszę oraz pasek statusu.
+Kliknięcie w wolne pole wykonuje ruch gracza, po czym – w trybie z AI – ruch wylicza
+`AIPlayer`. `BoardWidget` jedynie odpytuje stan z `Game` i rysuje go, a o kliknięciach
+informuje sygnałem `cellClicked`.
+
+Plansza jest responsywna: skaluje się wraz z oknem, pozostaje kwadratowa i wyśrodkowana
+(rozmiar komórki dobierany jest na bieżąco z dostępnej przestrzeni). Wybór znaku i poziomu
+trudności ma znaczenie tylko w grze z AI – gdy gracz wybierze O, partię rozpoczyna AI
+(grające znakiem X, który zawsze zaczyna).
 
 ### Wersja konsolowa
 
@@ -165,16 +184,20 @@ Powstają dwie binarki w `build/bin/`:
 
 - rozmiar planszy (3–20),
 - liczbę znaków w rzędzie potrzebną do wygranej (3–rozmiar planszy),
-- tryb gry: z drugim graczem lub z AI (człowiek gra znakiem X, AI znakiem O),
+- znak gracza: X (zaczyna) lub O (wtedy partię rozpoczyna AI),
+- poziom trudności AI: łatwy, średni lub trudny,
+- tryb gry: z drugim graczem lub z AI,
 - rozpoczęcie nowej gry z bieżącą konfiguracją.
 
 ## Najważniejsze cechy projektu
 
 - uogólnione reguły gry (dowolny rozmiar planszy i długość wygrywającej linii),
 - przeciwnik AI oparty o MinMax z odcinaniem alfa-beta,
+- wybór znaku gracza (X/O) oraz trzy poziomy trudności,
 - heurystyka i adaptacyjna głębokość zapewniające grywalność także na dużych planszach,
+- responsywna plansza skalująca się wraz z oknem,
 - rdzeń logiki oddzielony od prezentacji (wspólna biblioteka + GUI + konsola),
-- idealna gra na planszy 3×3 (pełne przeszukanie końcówek).
+- idealna gra na planszy 3×3 na najwyższym poziomie trudności.
 
 ## Podsumowanie
 
