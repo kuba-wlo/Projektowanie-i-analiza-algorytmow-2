@@ -8,11 +8,14 @@
 using ttt::Cell;
 
 BoardWidget::BoardWidget(QWidget* parent) : QWidget(parent) {
-    setMinimumSize(300, 300);
+    // Plansza ma wypełniać dostępne miejsce - dzięki temu skaluje się wraz
+    // z oknem (rozmiar komórek dobierany jest w paintEvent).
+    setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 }
 
 void BoardWidget::setGame(const ttt::Game* game) {
     game_ = game;
+    updateGeometry(); // zmiana liczby pól wpływa na podpowiedzi rozmiaru
     update();
 }
 
@@ -22,6 +25,27 @@ int BoardWidget::cellSize() const {
     }
     int n = game_->board().size();
     return std::min(width(), height()) / std::max(1, n);
+}
+
+QPoint BoardWidget::boardOrigin() const {
+    if (!game_) {
+        return {0, 0};
+    }
+    const int n = game_->board().size();
+    const int boardPx = cellSize() * n;
+    // Wyśrodkowanie kwadratowej planszy w prostokątnym widgetcie.
+    return {(width() - boardPx) / 2, (height() - boardPx) / 2};
+}
+
+QSize BoardWidget::sizeHint() const {
+    const int n = game_ ? game_->board().size() : 3;
+    const int side = std::clamp(60 * n, 300, 600);
+    return {side, side};
+}
+
+QSize BoardWidget::minimumSizeHint() const {
+    const int n = game_ ? game_->board().size() : 3;
+    return {18 * n, 18 * n};
 }
 
 void BoardWidget::paintEvent(QPaintEvent*) {
@@ -35,7 +59,12 @@ void BoardWidget::paintEvent(QPaintEvent*) {
 
     const int n = game_->board().size();
     const int cs = cellSize();
+    if (cs <= 0) {
+        return;
+    }
     const int boardPx = cs * n;
+    const QPoint origin = boardOrigin();
+    painter.translate(origin);
 
     // Siatka.
     QPen gridPen(Qt::gray);
@@ -81,8 +110,14 @@ void BoardWidget::mousePressEvent(QMouseEvent* event) {
         return;
     }
     const int n = game_->board().size();
-    const int col = event->position().x() / cs;
-    const int row = event->position().y() / cs;
+    const QPoint origin = boardOrigin();
+    const int localX = static_cast<int>(event->position().x()) - origin.x();
+    const int localY = static_cast<int>(event->position().y()) - origin.y();
+    if (localX < 0 || localY < 0) {
+        return; // klik poza planszą (na lewo/powyżej)
+    }
+    const int col = localX / cs;
+    const int row = localY / cs;
 
     if (row >= 0 && row < n && col >= 0 && col < n) {
         emit cellClicked(row, col);

@@ -9,6 +9,7 @@ class BoardWidget;
 class QSpinBox;
 class QLabel;
 class QCheckBox;
+class QComboBox;
 
 // Główne okno aplikacji: panel konfiguracji (rozmiar planszy, długość
 // wygrywającej linii, gra z AI) + plansza + pasek statusu.
@@ -29,9 +30,15 @@ private:
     ttt::Game game_;
     ttt::AIPlayer ai_;
 
+    // Znaki przypisane graczowi i AI w bieżącej partii (X zawsze zaczyna).
+    ttt::Cell humanMark_ = ttt::Cell::X;
+    ttt::Cell aiMark_ = ttt::Cell::O;
+
     BoardWidget* boardWidget_ = nullptr;
     QSpinBox* sizeSpin_ = nullptr;
     QSpinBox* winLenSpin_ = nullptr;
+    QComboBox* markCombo_ = nullptr;
+    QComboBox* difficultyCombo_ = nullptr;
     QCheckBox* vsAiCheck_ = nullptr;
     QLabel* statusLabel_ = nullptr;
 };
