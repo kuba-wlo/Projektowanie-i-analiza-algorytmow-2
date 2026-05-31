@@ -15,10 +15,10 @@ constexpr int kDirections[4][2] = {
     {0, 1}, {1, 0}, {1, 1}, {1, -1},
 };
 
-// Wartosc "okna" (fragmentu linii dlugosci winLength), w ktorym jest `count`
-// znakow jednego gracza i zadnego znaku przeciwnika. Rosnie wykladniczo, by
-// mocno premiowac linie bliskie ukonczenia (np. 2 znaki << 3 znaki).
-// Ograniczona z gory, by nigdy nie pomylic jej z prawdziwa wygrana (kWinScore).
+// Wartość „okna" (fragmentu linii długości winLength), w którym jest `count`
+// znaków jednego gracza i żadnego znaku przeciwnika. Rośnie wykładniczo, by
+// mocno premiować linie bliskie ukończenia (np. 2 znaki << 3 znaki).
+// Ograniczona z góry, by nigdy nie pomylić jej z prawdziwą wygraną (kWinScore).
 int windowValue(int count) {
     if (count <= 0) {
         return 0;
@@ -33,60 +33,113 @@ int windowValue(int count) {
     return value;
 }
 
+// Czy pole (r, c) sąsiaduje (w promieniu 1) z jakimkolwiek postawionym znakiem.
+bool hasNeighbor(const Board& board, int r, int c) {
+    for (int dr = -1; dr <= 1; ++dr) {
+        for (int dc = -1; dc <= 1; ++dc) {
+            if (dr == 0 && dc == 0) {
+                continue;
+            }
+            const int nr = r + dr;
+            const int nc = c + dc;
+            if (board.inBounds(nr, nc) && board.at(nr, nc) != Cell::Empty) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 } // namespace
 
-int AIPlayer::effectiveDepth(const Board& board) const {
+std::vector<Move> AIPlayer::candidateMoves(const Board& board) const {
+    const int n = board.size();
+    std::vector<Move> moves;
+
+    // Pusta plansza - nie ma się wokół czego ustawiać, zaczynamy od środka.
+    if (board.filledCount() == 0) {
+        moves.push_back({n / 2, n / 2});
+        return moves;
+    }
+
+    // Małe plansze / końcówki: bierzemy wszystkie wolne pola (pełne drzewo).
+    // Wyżej ograniczamy się do pól przy już postawionych znakach.
+    const bool considerAll = (n * n - board.filledCount()) <= 9;
+
+    for (int r = 0; r < n; ++r) {
+        for (int c = 0; c < n; ++c) {
+            if (!board.isEmpty(r, c)) {
+                continue;
+            }
+            if (considerAll || hasNeighbor(board, r, c)) {
+                moves.push_back({r, c});
+            }
+        }
+    }
+    return moves;
+}
+
+int AIPlayer::effectiveDepth(const Board& board, int branching) const {
     const int empties = board.size() * board.size() - board.filledCount();
-    // Do ~9 wolnych pol drzewo jest male - przeszukujemy je w calosci,
-    // dzieki czemu na 3x3 AI gra idealnie. Wyzej trzymamy sie limitu.
+    // Do ~9 wolnych pól drzewo jest małe - przeszukujemy je w całości,
+    // dzięki czemu na 3x3 AI gra idealnie.
     if (empties <= 9) {
         return empties;
     }
-    return maxDepth_;
+    // Wyżej dobieramy głębokość do rozgałęziania, by drzewo nie wybuchło:
+    // im więcej kandydatów, tym płycej schodzimy.
+    int cap;
+    if (branching <= 6) {
+        cap = 6;
+    } else if (branching <= 12) {
+        cap = 4;
+    } else if (branching <= 24) {
+        cap = 3;
+    } else {
+        cap = 2;
+    }
+    return std::min(maxDepth_, cap);
 }
 
 Move AIPlayer::chooseMove(const Board& board, const GameRules& rules) {
     Board working = board;
-    const int depthLimit = effectiveDepth(board);
+    const std::vector<Move> candidates = candidateMoves(working);
+    const int depthLimit = effectiveDepth(board, static_cast<int>(candidates.size()));
 
-    // Zbieramy wszystkie ruchy o najlepszej ocenie, by potem wylosowac jeden.
+    // Zbieramy wszystkie ruchy o najlepszej ocenie, by potem wylosować jeden.
     std::vector<Move> bestMoves;
     int bestScore = -kInf;
     int alpha = -kInf;
     const int beta = kInf;
 
-    for (int r = 0; r < working.size(); ++r) {
-        for (int c = 0; c < working.size(); ++c) {
-            if (!working.isEmpty(r, c)) {
-                continue;
-            }
-            working.set(r, c, mark_);
+    for (const Move& m : candidates) {
+        const int r = m.row;
+        const int c = m.col;
+        working.set(r, c, mark_);
 
-            int score;
-            if (rules.hasWonAt(working, r, c)) {
-                score = kWinScore; // natychmiastowa wygrana
-            } else {
-                score = minimax(working, rules, 1, alpha, beta, opponent(mark_),
-                                depthLimit);
-            }
-
-            working.set(r, c, Cell::Empty);
-
-            if (score > bestScore) {
-                bestScore = score;
-                bestMoves.clear();
-                bestMoves.push_back({r, c});
-            } else if (score == bestScore) {
-                bestMoves.push_back({r, c});
-            }
-            alpha = std::max(alpha, bestScore);
+        int score;
+        if (rules.hasWonAt(working, r, c)) {
+            score = kWinScore; // natychmiastowa wygrana
+        } else {
+            score = minimax(working, rules, 1, alpha, beta, opponent(mark_),
+                            depthLimit);
         }
+
+        working.set(r, c, Cell::Empty);
+
+        if (score > bestScore) {
+            bestScore = score;
+            bestMoves.clear();
+            bestMoves.push_back({r, c});
+        } else if (score == bestScore) {
+            bestMoves.push_back({r, c});
+        }
+        alpha = std::max(alpha, bestScore);
     }
 
     if (bestMoves.empty()) {
         return {};
     }
-    // Losujemy sposrod rownie dobrych ruchow -> partie sie roznia.
+    // Losujemy spośród równie dobrych ruchów -> partie się różnią.
     std::uniform_int_distribution<std::size_t> dist(0, bestMoves.size() - 1);
     return bestMoves[dist(rng_)];
 }
@@ -103,42 +156,39 @@ int AIPlayer::minimax(Board& board, const GameRules& rules, int depth, int alpha
     const bool maximizing = (toMove == mark_);
     int best = maximizing ? -kInf : kInf;
 
-    for (int r = 0; r < board.size(); ++r) {
-        for (int c = 0; c < board.size(); ++c) {
-            if (!board.isEmpty(r, c)) {
-                continue;
-            }
-            board.set(r, c, toMove);
+    for (const Move& m : candidateMoves(board)) {
+        const int r = m.row;
+        const int c = m.col;
+        board.set(r, c, toMove);
 
-            int score;
-            if (rules.hasWonAt(board, r, c)) {
-                // Wygrana glebiej w drzewie jest mniej cenna niz natychmiastowa.
-                score = maximizing ? (kWinScore - depth) : -(kWinScore - depth);
-            } else {
-                score = minimax(board, rules, depth + 1, alpha, beta,
-                                opponent(toMove), depthLimit);
-            }
+        int score;
+        if (rules.hasWonAt(board, r, c)) {
+            // Wygrana głębiej w drzewie jest mniej cenna niż natychmiastowa.
+            score = maximizing ? (kWinScore - depth) : -(kWinScore - depth);
+        } else {
+            score = minimax(board, rules, depth + 1, alpha, beta,
+                            opponent(toMove), depthLimit);
+        }
 
-            board.set(r, c, Cell::Empty);
+        board.set(r, c, Cell::Empty);
 
-            if (maximizing) {
-                best = std::max(best, score);
-                alpha = std::max(alpha, best);
-            } else {
-                best = std::min(best, score);
-                beta = std::min(beta, best);
-            }
-            if (beta <= alpha) {
-                return best; // odciecie alfa-beta
-            }
+        if (maximizing) {
+            best = std::max(best, score);
+            alpha = std::max(alpha, best);
+        } else {
+            best = std::min(best, score);
+            beta = std::min(beta, best);
+        }
+        if (beta <= alpha) {
+            return best; // odcięcie alfa-beta
         }
     }
     return best;
 }
 
 int AIPlayer::evaluate(const Board& board, const GameRules& rules) const {
-    // Przesuwamy "okno" dlugosci winLength po kazdej linii planszy.
-    // - okno mieszane (sa znaki obu graczy) jest martwe -> 0,
+    // Przesuwamy „okno" długości winLength po każdej linii planszy.
+    // - okno mieszane (są znaki obu graczy) jest martwe -> 0,
     // - okno z samymi moimi znakami -> punkty na plus (wg ich liczby),
     // - okno z samymi znakami przeciwnika -> punkty na minus.
     const int n = board.size();
@@ -154,7 +204,7 @@ int AIPlayer::evaluate(const Board& board, const GameRules& rules) const {
                 const int endR = r + (k - 1) * dir[0];
                 const int endC = c + (k - 1) * dir[1];
                 if (!board.inBounds(endR, endC)) {
-                    continue; // okno wychodzi poza plansze
+                    continue; // okno wychodzi poza planszę
                 }
 
                 int mine = 0;
