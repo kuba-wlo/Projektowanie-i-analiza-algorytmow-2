@@ -47,6 +47,34 @@ bool GameRules::hasWonAt(const Board& board, int lastRow, int lastCol) const {
     return false;
 }
 
+std::vector<Move> GameRules::winningLine(const Board& board, int row, int col) const {
+    if (!board.inBounds(row, col)) {
+        return {};
+    }
+    const Cell mark = board.at(row, col);
+    if (mark == Cell::Empty) {
+        return {};
+    }
+
+    for (const auto& dir : kDirections) {
+        if (countInLine(board, row, col, dir[0], dir[1], mark) < winLength_) {
+            continue;
+        }
+        // Zbieramy caly ciagly odcinek znaku w tym kierunku (w obie strony).
+        std::vector<Move> line{{row, col}};
+        for (int r = row + dir[0], c = col + dir[1];
+             board.inBounds(r, c) && board.at(r, c) == mark; r += dir[0], c += dir[1]) {
+            line.push_back({r, c});
+        }
+        for (int r = row - dir[0], c = col - dir[1];
+             board.inBounds(r, c) && board.at(r, c) == mark; r -= dir[0], c -= dir[1]) {
+            line.push_back({r, c});
+        }
+        return line;
+    }
+    return {};
+}
+
 bool GameRules::hasWon(const Board& board, Cell mark) const {
     if (mark == Cell::Empty) {
         return false;

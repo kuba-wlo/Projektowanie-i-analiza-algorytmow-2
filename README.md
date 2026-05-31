@@ -120,7 +120,9 @@ Kliknięcie w wolne pole wykonuje ruch gracza, po czym – w trybie z AI – ruc
 informuje sygnałem `cellClicked`.
 
 Plansza jest responsywna: skaluje się wraz z oknem, pozostaje kwadratowa i wyśrodkowana
-(rozmiar komórki dobierany jest na bieżąco z dostępnej przestrzeni). Wybór znaku i poziomu
+(rozmiar komórki dobierany jest na bieżąco z dostępnej przestrzeni). Po zakończeniu partii
+zwycięska linia jest podświetlana na planszy. Interfejs używa jasnego motywu (arkusz
+stylów QSS) z panelem ustawień, w którym każda opcja ma etykietę nad polem. Wybór znaku i poziomu
 trudności ma znaczenie tylko w grze z AI – gdy gracz wybierze O, partię rozpoczyna AI
 (grające znakiem X, który zawsze zaczyna).
 
@@ -200,6 +202,7 @@ Powstają dwie binarki w `build/bin/`:
 - wybór znaku gracza (X/O) oraz trzy poziomy trudności,
 - heurystyka i adaptacyjna głębokość zapewniające grywalność także na dużych planszach,
 - responsywna plansza skalująca się wraz z oknem,
+- podświetlenie zwycięskiej linii oraz nowoczesny, jasny motyw interfejsu,
 - rdzeń logiki oddzielony od prezentacji (wspólna biblioteka + GUI + konsola),
 - idealna gra na planszy 3×3 na najwyższym poziomie trudności.
 

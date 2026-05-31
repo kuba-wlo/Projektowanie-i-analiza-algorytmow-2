@@ -26,7 +26,9 @@ bool Game::play(int row, int col) {
     board_.set(row, col, current_);
     status_ = rules_.status(board_, Move{row, col});
 
-    if (status_ == GameStatus::InProgress) {
+    if (status_ == GameStatus::XWins || status_ == GameStatus::OWins) {
+        winningLine_ = rules_.winningLine(board_, row, col);
+    } else if (status_ == GameStatus::InProgress) {
         current_ = opponent(current_);
     }
     return true;
@@ -36,6 +38,7 @@ void Game::reset() {
     board_.clear();
     current_ = Cell::X;
     status_ = GameStatus::InProgress;
+    winningLine_.clear();
 }
 
 void Game::reset(const GameConfig& config) {
@@ -44,6 +47,7 @@ void Game::reset(const GameConfig& config) {
     rules_ = GameRules(config_.winLength);
     current_ = Cell::X;
     status_ = GameStatus::InProgress;
+    winningLine_.clear();
 }
 
 } // namespace ttt

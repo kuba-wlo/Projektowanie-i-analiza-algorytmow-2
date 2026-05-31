@@ -4,6 +4,8 @@
 #include "GameRules.hpp"
 #include "Types.hpp"
 
+#include <vector>
+
 namespace ttt {
 
 // Kontroler rozgrywki: łączy planszę, zasady i kolejność ruchów.
@@ -21,6 +23,9 @@ public:
     GameStatus status() const { return status_; }
     bool isOver() const { return status_ != GameStatus::InProgress; }
 
+    // Pola zwycięskiej linii (puste, dopóki nikt nie wygrał) - do podświetlenia w GUI.
+    const std::vector<Move>& winningLine() const { return winningLine_; }
+
     // Próbuje wykonać ruch aktualnego gracza w (row, col).
     // Zwraca true, jeśli ruch był prawidłowy i został wykonany.
     bool play(int row, int col);
@@ -35,6 +40,7 @@ private:
     GameRules rules_;
     Cell current_ = Cell::X; // X zaczyna
     GameStatus status_ = GameStatus::InProgress;
+    std::vector<Move> winningLine_; // wypełniane przy wygranej
 };
 
 } // namespace ttt
