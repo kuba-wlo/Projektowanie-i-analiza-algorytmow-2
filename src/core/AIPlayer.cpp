@@ -80,10 +80,11 @@ std::vector<Move> AIPlayer::candidateMoves(const Board& board) const {
 
 int AIPlayer::effectiveDepth(const Board& board, int branching) const {
     const int empties = board.size() * board.size() - board.filledCount();
-    // Do ~9 wolnych pól drzewo jest małe - przeszukujemy je w całości,
-    // dzięki czemu na 3x3 AI gra idealnie.
+    // Do ~9 wolnych pól drzewo jest małe - przeszukujemy je w całości
+    // (z dokładnością do limitu trudności), dzięki czemu na 3x3 najwyższy
+    // poziom gra idealnie, a niższe są słabsze.
     if (empties <= 9) {
-        return empties;
+        return std::min(empties, maxDepth_);
     }
     // Wyżej dobieramy głębokość do rozgałęziania, by drzewo nie wybuchło:
     // im więcej kandydatów, tym płycej schodzimy.
@@ -106,10 +107,13 @@ Move AIPlayer::chooseMove(const Board& board, const GameRules& rules) {
     const int depthLimit = effectiveDepth(board, static_cast<int>(candidates.size()));
 
     // Zbieramy wszystkie ruchy o najlepszej ocenie, by potem wylosować jeden.
+    // UWAGA: każdy ruch w korzeniu oceniamy pełnym oknem (-kInf, kInf) - bez
+    // zacieśniania alpha między ruchami. Inaczej odcięcia alfa-beta zwracałyby
+    // dla części ruchów jedynie oszacowanie (granicę), a nie dokładny wynik, i
+    // do puli „równorzędnych" trafiałyby ruchy faktycznie gorsze (a w efekcie
+    // AI losowałoby ruch przegrywający). Odcięcia w głębszych węzłach zostają.
     std::vector<Move> bestMoves;
     int bestScore = -kInf;
-    int alpha = -kInf;
-    const int beta = kInf;
 
     for (const Move& m : candidates) {
         const int r = m.row;
@@ -120,7 +124,7 @@ Move AIPlayer::chooseMove(const Board& board, const GameRules& rules) {
         if (rules.hasWonAt(working, r, c)) {
             score = kWinScore; // natychmiastowa wygrana
         } else {
-            score = minimax(working, rules, 1, alpha, beta, opponent(mark_),
+            score = minimax(working, rules, 1, -kInf, kInf, opponent(mark_),
                             depthLimit);
         }
 
@@ -133,7 +137,6 @@ Move AIPlayer::chooseMove(const Board& board, const GameRules& rules) {
         } else if (score == bestScore) {
             bestMoves.push_back({r, c});
         }
-        alpha = std::max(alpha, bestScore);
     }
 
     if (bestMoves.empty()) {
