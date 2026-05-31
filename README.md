@@ -49,6 +49,10 @@ Poziom trudności ustawia górny limit głębokości przeszukiwania (`maxDepth`)
 przez adaptację opisaną wyżej, więc różnica między poziomami jest tam mniejsza (kompromis
 między siłą gry a czasem odpowiedzi).
 
+Od poziomu zależy też **otwarcie**, gdy AI rusza pierwsze: trudny zawsze gra w środek
+(najlepsze pole), średni losuje środek lub jego sąsiada, a łatwy dowolne pole. Dzięki temu
+na niższych poziomach partie nie zaczynają się zawsze tak samo.
+
 ### Heurystyczna ocena pozycji
 
 Gdy limit głębokości zostanie osiągnięty, pozycja jest oceniana funkcją heurystyczną.

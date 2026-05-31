@@ -38,6 +38,12 @@ private:
     // swoją linię, a karze te, w których przeciwnik buduje swoją.
     int evaluate(const Board& board, const GameRules& rules) const;
 
+    // Wybór pierwszego ruchu na pustej planszy. Zależy od poziomu trudności:
+    // trudny gra w środek (najlepsze otwarcie), łatwy losuje dowolne pole,
+    // średni losuje środek lub jego sąsiada. Dzięki temu na niższych poziomach
+    // partie nie zaczynają się zawsze tak samo.
+    Move openingMove(const Board& board);
+
     // Lista pól wartych rozważenia w danej pozycji. Zamiast wszystkich wolnych
     // pól bierze tylko te sąsiadujące z już postawionymi znakami (na pustej
     // planszy - środek). Dzięki temu współczynnik rozgałęziania nie rośnie z

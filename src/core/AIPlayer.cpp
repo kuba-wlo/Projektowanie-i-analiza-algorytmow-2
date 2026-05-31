@@ -101,7 +101,48 @@ int AIPlayer::effectiveDepth(const Board& board, int branching) const {
     return std::min(maxDepth_, cap);
 }
 
+Move AIPlayer::openingMove(const Board& board) {
+    const int n = board.size();
+    const int mid = n / 2;
+
+    // Trudny poziom: zawsze najlepsze otwarcie - srodek (lezy na najwiekszej
+    // liczbie linii). Progi odpowiadaja mapowaniu poziomow na maxDepth.
+    if (maxDepth_ >= 7) {
+        return {mid, mid};
+    }
+
+    std::vector<Move> options;
+    if (maxDepth_ <= 1) {
+        // Latwy: dowolne pole - otwarcie bywa slabe, partie mocno sie roznia.
+        for (int r = 0; r < n; ++r) {
+            for (int c = 0; c < n; ++c) {
+                options.push_back({r, c});
+            }
+        }
+    } else {
+        // Sredni: srodek lub jego sasiad - otwarcie wciaz przyzwoite, ale rozne.
+        for (int dr = -1; dr <= 1; ++dr) {
+            for (int dc = -1; dc <= 1; ++dc) {
+                const int r = mid + dr;
+                const int c = mid + dc;
+                if (board.inBounds(r, c)) {
+                    options.push_back({r, c});
+                }
+            }
+        }
+    }
+
+    std::uniform_int_distribution<std::size_t> dist(0, options.size() - 1);
+    return options[dist(rng_)];
+}
+
 Move AIPlayer::chooseMove(const Board& board, const GameRules& rules) {
+    // Pierwszy ruch na pustej planszy nie ma sasiadow do oceny - wybor otwarcia
+    // zalezy od poziomu trudnosci (trudny: srodek, nizsze: z losowaniem).
+    if (board.filledCount() == 0) {
+        return openingMove(board);
+    }
+
     Board working = board;
     const std::vector<Move> candidates = candidateMoves(working);
     const int depthLimit = effectiveDepth(board, static_cast<int>(candidates.size()));
