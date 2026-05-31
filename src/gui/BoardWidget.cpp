@@ -87,7 +87,9 @@ void BoardWidget::paintEvent(QPaintEvent*) {
         painter.drawLine(i * cs, 0, i * cs, boardPx);
     }
 
-    // Znaki.
+    // Znaki (bez wypelnienia - po podswietleniu trzeba wyzerowac pedzel,
+    // inaczej O rysowaloby sie wypelnione kolorem podswietlenia).
+    painter.setBrush(Qt::NoBrush);
     const int margin = cs / 5;
     for (int r = 0; r < n; ++r) {
         for (int c = 0; c < n; ++c) {
