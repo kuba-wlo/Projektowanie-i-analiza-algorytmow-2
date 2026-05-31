@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     configRow->addWidget(new QLabel(tr("W rzędzie:")));
     winLenSpin_ = new QSpinBox();
-    winLenSpin_->setRange(3, 20);
+    winLenSpin_->setRange(3, sizeSpin_->value()); // nie więcej niż rozmiar planszy
     winLenSpin_->setValue(3);
     configRow->addWidget(winLenSpin_);
 
@@ -74,6 +74,10 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     connect(newGameBtn, &QPushButton::clicked, this, &MainWindow::startNewGame);
     connect(boardWidget_, &BoardWidget::cellClicked, this, &MainWindow::onCellClicked);
+
+    // Liczba znaków w rzędzie nie może przekraczać rozmiaru planszy.
+    connect(sizeSpin_, QOverload<int>::of(&QSpinBox::valueChanged), this,
+            [this](int size) { winLenSpin_->setMaximum(size); });
 
     // Wybor znaku i poziomu ma sens tylko w grze z AI.
     auto syncAiControls = [this] {
