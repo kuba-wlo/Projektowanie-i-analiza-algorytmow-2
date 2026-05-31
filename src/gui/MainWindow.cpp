@@ -4,12 +4,50 @@
 
 #include <QCheckBox>
 #include <QComboBox>
+#include <QGridLayout>
+#include <QGroupBox>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QVBoxLayout>
 #include <QWidget>
+
+namespace {
+// Arkusz stylów (QSS) - nowoczesny, jasny wygląd okna.
+constexpr auto kStyleSheet = R"(
+QWidget { background: #eef1f5; color: #2b2f36; font-size: 13px; }
+QLabel#heading { font-size: 26px; font-weight: bold; color: #1f2933; }
+QLabel#subtitle { color: #6b7280; font-size: 12px; }
+QLabel#status { font-size: 17px; font-weight: 600; padding: 8px 2px; color: #1f2933; }
+QGroupBox {
+    background: #ffffff; border: 1px solid #d6dbe1; border-radius: 10px;
+    margin-top: 14px; padding: 12px; font-weight: 600;
+}
+QGroupBox::title { subcontrol-origin: margin; left: 12px; padding: 0 4px; color: #4b5563; }
+QLabel#field { color: #6b7280; font-size: 11px; font-weight: 600; }
+QSpinBox, QComboBox {
+    background: #ffffff; border: 1px solid #cbd2da; border-radius: 6px;
+    padding: 5px 8px; min-height: 22px;
+}
+QSpinBox:focus, QComboBox:focus { border: 1px solid #3b82f6; }
+QComboBox:disabled, QSpinBox:disabled { background: #f1f3f6; color: #9aa3ad; }
+QPushButton {
+    background: #3b82f6; color: #ffffff; border: none; border-radius: 8px;
+    padding: 9px 20px; font-weight: 600;
+}
+QPushButton:hover { background: #2f6fe0; }
+QPushButton:pressed { background: #2a63c8; }
+QCheckBox { spacing: 6px; font-weight: 600; }
+)";
+
+// Etykieta nad polem formularza (drobny, szary nagłówek kolumny).
+QLabel* fieldLabel(const QString& text) {
+    auto* label = new QLabel(text);
+    label->setObjectName("field");
+    return label;
+}
+} // namespace
 
 using ttt::Cell;
 using ttt::GameConfig;
@@ -20,46 +58,62 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     setWindowTitle(tr("Kółko i krzyżyk"));
 
     auto* central = new QWidget(this);
+    central->setStyleSheet(kStyleSheet);
     auto* layout = new QVBoxLayout(central);
+    layout->setContentsMargins(18, 16, 18, 16);
+    layout->setSpacing(12);
 
-    // Panel konfiguracji.
-    auto* configRow = new QHBoxLayout();
+    // Nagłówek.
+    auto* heading = new QLabel(tr("Kółko i krzyżyk"));
+    heading->setObjectName("heading");
+    layout->addWidget(heading);
+    auto* subtitle = new QLabel(
+        tr("Ustaw rozmiar planszy, liczbę znaków w rzędzie i przeciwnika."));
+    subtitle->setObjectName("subtitle");
+    layout->addWidget(subtitle);
 
-    configRow->addWidget(new QLabel(tr("Rozmiar:")));
+    // Panel ustawień: każda kontrolka w kolumnie z etykietą u góry.
+    auto* configGroup = new QGroupBox(tr("Ustawienia gry"));
+    auto* grid = new QGridLayout(configGroup);
+    grid->setHorizontalSpacing(16);
+    grid->setVerticalSpacing(6);
+
     sizeSpin_ = new QSpinBox();
     sizeSpin_->setRange(3, 20);
     sizeSpin_->setValue(3);
-    configRow->addWidget(sizeSpin_);
 
-    configRow->addWidget(new QLabel(tr("W rzędzie:")));
     winLenSpin_ = new QSpinBox();
     winLenSpin_->setRange(3, sizeSpin_->value()); // nie więcej niż rozmiar planszy
     winLenSpin_->setValue(3);
-    configRow->addWidget(winLenSpin_);
 
-    configRow->addWidget(new QLabel(tr("Grasz:")));
     markCombo_ = new QComboBox();
     markCombo_->addItem(tr("X"));
     markCombo_->addItem(tr("O"));
-    configRow->addWidget(markCombo_);
 
-    configRow->addWidget(new QLabel(tr("Poziom:")));
     difficultyCombo_ = new QComboBox();
     difficultyCombo_->addItem(tr("Łatwy"));
     difficultyCombo_->addItem(tr("Średni"));
     difficultyCombo_->addItem(tr("Trudny"));
     difficultyCombo_->setCurrentIndex(2);
-    configRow->addWidget(difficultyCombo_);
+
+    grid->addWidget(fieldLabel(tr("Rozmiar planszy")), 0, 0);
+    grid->addWidget(sizeSpin_, 1, 0);
+    grid->addWidget(fieldLabel(tr("Znaki w rzędzie")), 0, 1);
+    grid->addWidget(winLenSpin_, 1, 1);
+    grid->addWidget(fieldLabel(tr("Twój znak")), 0, 2);
+    grid->addWidget(markCombo_, 1, 2);
+    grid->addWidget(fieldLabel(tr("Poziom AI")), 0, 3);
+    grid->addWidget(difficultyCombo_, 1, 3);
 
     vsAiCheck_ = new QCheckBox(tr("Gra z AI"));
     vsAiCheck_->setChecked(true);
-    configRow->addWidget(vsAiCheck_);
+    grid->addWidget(vsAiCheck_, 1, 4);
 
+    grid->setColumnStretch(5, 1); // dosuwa kontrolki do lewej, przycisk do prawej
     auto* newGameBtn = new QPushButton(tr("Nowa gra"));
-    configRow->addWidget(newGameBtn);
-    configRow->addStretch();
+    grid->addWidget(newGameBtn, 1, 6);
 
-    layout->addLayout(configRow);
+    layout->addWidget(configGroup);
 
     // Plansza wypełnia dostępne miejsce i skaluje się wraz z oknem.
     boardWidget_ = new BoardWidget();
@@ -67,10 +121,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     // Pasek statusu.
     statusLabel_ = new QLabel();
+    statusLabel_->setObjectName("status");
     layout->addWidget(statusLabel_);
 
     setCentralWidget(central);
-    resize(640, 720); // rozmiar startowy - dalej okno (i plansza) skalują się dowolnie
+    resize(680, 760); // rozmiar startowy - dalej okno (i plansza) skalują się dowolnie
 
     connect(newGameBtn, &QPushButton::clicked, this, &MainWindow::startNewGame);
     connect(boardWidget_, &BoardWidget::cellClicked, this, &MainWindow::onCellClicked);

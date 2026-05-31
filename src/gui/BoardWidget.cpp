@@ -51,7 +51,7 @@ QSize BoardWidget::minimumSizeHint() const {
 void BoardWidget::paintEvent(QPaintEvent*) {
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
-    painter.fillRect(rect(), Qt::white);
+    painter.fillRect(rect(), QColor(238, 241, 245)); // tlo dopasowane do okna
 
     if (!game_) {
         return;
@@ -66,8 +66,20 @@ void BoardWidget::paintEvent(QPaintEvent*) {
     const QPoint origin = boardOrigin();
     painter.translate(origin);
 
+    // Plansza jako biala "karta" z delikatna ramka.
+    painter.setPen(QPen(QColor(214, 219, 225), 1));
+    painter.setBrush(Qt::white);
+    painter.drawRoundedRect(0, 0, boardPx, boardPx, 8, 8);
+
+    // Podswietlenie zwycieskiej linii (pod znakami).
+    painter.setPen(Qt::NoPen);
+    painter.setBrush(QColor(76, 175, 80, 70)); // delikatna zielen
+    for (const auto& cell : game_->winningLine()) {
+        painter.drawRect(cell.col * cs, cell.row * cs, cs, cs);
+    }
+
     // Siatka.
-    QPen gridPen(Qt::gray);
+    QPen gridPen(QColor(203, 210, 218));
     gridPen.setWidth(2);
     painter.setPen(gridPen);
     for (int i = 0; i <= n; ++i) {
