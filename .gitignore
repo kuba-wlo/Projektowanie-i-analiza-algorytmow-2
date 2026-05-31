@@ -1,0 +1,23 @@
+# Katalogi budowania
+build/
+out/
+cmake-build-*/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+*.cmake.stamp
+
+# Pliki IDE
+.vs/
+.vscode/
+.idea/
+*.user
+
+# Pliki posrednie / binaria
+*.o
+*.obj
+*.exe
+*.dll
+*.pdb
