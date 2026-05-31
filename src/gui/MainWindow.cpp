@@ -20,7 +20,7 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     auto* central = new QWidget(this);
     auto* layout = new QVBoxLayout(central);
 
-    // --- Panel konfiguracji ---
+    // Panel konfiguracji.
     auto* configRow = new QHBoxLayout();
 
     configRow->addWidget(new QLabel(tr("Rozmiar:")));
@@ -45,11 +45,11 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
 
     layout->addLayout(configRow);
 
-    // --- Plansza ---
+    // Plansza.
     boardWidget_ = new BoardWidget();
     layout->addWidget(boardWidget_, /*stretch=*/1);
 
-    // --- Status ---
+    // Pasek statusu.
     statusLabel_ = new QLabel();
     layout->addWidget(statusLabel_);
 
@@ -75,7 +75,7 @@ void MainWindow::onCellClicked(int row, int col) {
     if (game_.isOver()) {
         return;
     }
-    // W trybie z AI czlowiek gra tylko znakiem X.
+    // W trybie z AI człowiek gra tylko znakiem X.
     if (vsAiCheck_->isChecked() && game_.currentPlayer() != Cell::X) {
         return;
     }
@@ -91,7 +91,7 @@ void MainWindow::maybeMoveAI() {
     if (!vsAiCheck_->isChecked() || game_.isOver()) {
         return;
     }
-    // AI gra znakiem przeciwnym do czlowieka (O).
+    // AI gra znakiem przeciwnym do człowieka (O).
     while (!game_.isOver() && game_.currentPlayer() == Cell::O) {
         ai_.setMark(Cell::O);
         ttt::Move move = ai_.chooseMove(game_.board(), game_.rules());

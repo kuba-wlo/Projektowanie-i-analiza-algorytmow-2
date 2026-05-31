@@ -6,9 +6,9 @@
 
 namespace ttt {
 
-// Kontroler rozgrywki: laczy plansze, zasady i kolejnosc ruchow.
+// Kontroler rozgrywki: łączy planszę, zasady i kolejność ruchów.
 // Nie zna GUI ani konkretnych graczy - operuje na znakach (X/O).
-// To tu trafia stan, ktory GUI odpytuje i aktualizuje.
+// To tu trafia stan, który GUI odpytuje i aktualizuje.
 class Game {
 public:
     explicit Game(const GameConfig& config = {});
@@ -21,11 +21,11 @@ public:
     GameStatus status() const { return status_; }
     bool isOver() const { return status_ != GameStatus::InProgress; }
 
-    // Probuje wykonac ruch aktualnego gracza w (row, col).
-    // Zwraca true, jesli ruch byl prawidlowy i zostal wykonany.
+    // Próbuje wykonać ruch aktualnego gracza w (row, col).
+    // Zwraca true, jeśli ruch był prawidłowy i został wykonany.
     bool play(int row, int col);
 
-    // Restart gry (opcjonalnie z nowa konfiguracja).
+    // Restart gry (opcjonalnie z nową konfiguracją).
     void reset();
     void reset(const GameConfig& config);
 

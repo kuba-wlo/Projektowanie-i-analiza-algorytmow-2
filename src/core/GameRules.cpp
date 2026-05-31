@@ -13,8 +13,8 @@ constexpr int kDirections[4][2] = {
     {1, -1}, // /
 };
 
-// Liczy ile pol z `mark` jest w linii przechodzacej przez (row, col)
-// w kierunku (dr, dc), liczac w obie strony wlacznie z polem startowym.
+// Liczy ile pól z `mark` jest w linii przechodzącej przez (row, col)
+// w kierunku (dr, dc), licząc w obie strony włącznie z polem startowym.
 int countInLine(const Board& board, int row, int col, int dr, int dc, Cell mark) {
     int total = 1;
 

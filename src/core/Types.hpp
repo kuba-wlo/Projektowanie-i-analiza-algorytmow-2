@@ -27,7 +27,7 @@ struct Move {
 
 // Konfiguracja gry definiowana przez gracza:
 //  - boardSize : rozmiar kwadratowej planszy (boardSize x boardSize),
-//  - winLength : liczba znakow w rzedzie potrzebna do wygranej.
+//  - winLength : liczba znaków w rzędzie potrzebna do wygranej.
 struct GameConfig {
     int boardSize = 3;
     int winLength = 3;

@@ -6,22 +6,22 @@
 
 namespace ttt {
 
-// Abstrakcyjny interfejs gracza. Dzieki niemu Game nie musi wiedziec,
-// czy ruch pochodzi od czlowieka (GUI) czy od AI (MinMax).
+// Abstrakcyjny interfejs gracza. Dzięki niemu Game nie musi wiedzieć,
+// czy ruch pochodzi od człowieka (GUI) czy od AI (MinMax).
 class Player {
 public:
     virtual ~Player() = default;
 
-    // Znak, ktorym gra ten gracz (X lub O).
+    // Znak, którym gra ten gracz (X lub O).
     Cell mark() const { return mark_; }
     void setMark(Cell mark) { mark_ = mark; }
 
-    // Czy gracz jest sterowany przez czlowieka (ruch przychodzi z GUI),
-    // czy potrafi sam wyliczyc ruch (AI).
+    // Czy gracz jest sterowany przez człowieka (ruch przychodzi z GUI),
+    // czy potrafi sam wyliczyć ruch (AI).
     virtual bool isHuman() const = 0;
 
-    // Wybiera ruch dla AI. Dla gracza-czlowieka zwraca ruch nieprawidlowy
-    // (GUI dostarcza ruch w inny sposob).
+    // Wybiera ruch dla AI. Dla gracza-człowieka zwraca ruch nieprawidłowy
+    // (GUI dostarcza ruch w inny sposób).
     virtual Move chooseMove(const Board& board, const GameRules& rules) = 0;
 
 protected:

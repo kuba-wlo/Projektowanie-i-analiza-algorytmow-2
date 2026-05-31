@@ -4,8 +4,8 @@
 
 namespace ttt {
 
-// Gracz sterowany przez czlowieka. Nie liczy ruchu sam - ruch dostarcza GUI
-// (np. po kliknieciu w pole), wiec chooseMove zwraca ruch nieprawidlowy.
+// Gracz sterowany przez człowieka. Nie liczy ruchu sam - ruch dostarcza GUI
+// (np. po kliknięciu w pole), więc chooseMove zwraca ruch nieprawidłowy.
 class HumanPlayer : public Player {
 public:
     bool isHuman() const override { return true; }

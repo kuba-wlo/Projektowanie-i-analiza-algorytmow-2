@@ -5,7 +5,7 @@
 namespace ttt {
 
 namespace {
-// Pilnuje, by winLength nie przekraczal rozmiaru planszy.
+// Pilnuje, by winLength nie przekraczał rozmiaru planszy.
 GameConfig sanitize(GameConfig config) {
     config.boardSize = std::max(1, config.boardSize);
     config.winLength = std::clamp(config.winLength, 1, config.boardSize);

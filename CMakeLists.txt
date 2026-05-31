@@ -18,24 +18,24 @@ else()
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# --- Rdzen gry (logika + AI) jako biblioteka statyczna ---
+# Rdzeń gry (logika + AI) jako biblioteka statyczna.
 add_library(ttt_core STATIC
     src/core/Board.cpp
     src/core/GameRules.cpp
     src/core/Game.cpp
     src/core/AIPlayer.cpp
 )
-# Katalog src/core na sciezce include (pozwala #include "Board.hpp" itd.).
+# Katalog src/core na ścieżce include (pozwala #include "Board.hpp" itd.).
 target_include_directories(ttt_core PUBLIC src/core)
 target_compile_features(ttt_core PUBLIC cxx_std_17)
 
-# --- Wersja konsolowa (do szybkiego testowania logiki i AI) ---
+# Wersja konsolowa (do szybkiego testowania logiki i AI).
 add_executable(tictactoe_console
     src/console/main.cpp
 )
 target_link_libraries(tictactoe_console PRIVATE ttt_core)
 
-# --- Wersja graficzna (Qt 6 Widgets) ---
+# Wersja graficzna (Qt 6 Widgets).
 find_package(Qt6 REQUIRED COMPONENTS Widgets)
 qt_standard_project_setup()
 

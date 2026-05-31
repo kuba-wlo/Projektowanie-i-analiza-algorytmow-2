@@ -10,8 +10,8 @@ class QSpinBox;
 class QLabel;
 class QCheckBox;
 
-// Glowne okno aplikacji: panel konfiguracji (rozmiar planszy, dlugosc
-// wygrywajacej linii, gra z AI) + plansza + pasek statusu.
+// Główne okno aplikacji: panel konfiguracji (rozmiar planszy, długość
+// wygrywającej linii, gra z AI) + plansza + pasek statusu.
 class MainWindow : public QMainWindow {
     Q_OBJECT
 

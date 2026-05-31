@@ -1,5 +1,5 @@
-// Wersja konsolowa gry w kolko i krzyzyk.
-// Korzysta z tej samej logiki co GUI (biblioteka ttt_core) - sluzy do
+// Wersja konsolowa gry w kółko i krzyżyk.
+// Korzysta z tej samej logiki co GUI (biblioteka ttt_core) - służy do
 // szybkiego testowania zasad i AI bez uruchamiania okna Qt.
 
 #include "AIPlayer.hpp"
@@ -23,7 +23,7 @@ char glyph(Cell c) {
     }
 }
 
-// Rysuje plansze z indeksami wierszy/kolumn, by ulatwic podawanie ruchow.
+// Rysuje planszę z indeksami wierszy/kolumn, by ułatwić podawanie ruchów.
 void printBoard(const Board& board) {
     const int n = board.size();
 
@@ -47,8 +47,8 @@ void printBoard(const Board& board) {
     std::cout << '\n';
 }
 
-// Wczytuje liczbe calkowita z zakresu [min, max], ponawia przy bledzie.
-// Przy koncu wejscia (EOF) konczy program, by nie zapetlic sie w nieskonczonosc.
+// Wczytuje liczbę całkowitą z zakresu [min, max], ponawia przy błędzie.
+// Przy końcu wejścia (EOF) kończy program, by nie zapętlić się w nieskończoność.
 int readInt(const std::string& prompt, int min, int max) {
     int value;
     while (true) {
@@ -90,7 +90,7 @@ int main() {
 
     Game game(GameConfig{size, winLen});
     AIPlayer ai;
-    ai.setMark(Cell::O); // czlowiek gra X, AI gra O
+    ai.setMark(Cell::O); // człowiek gra X, AI gra O
 
     while (!game.isOver()) {
         printBoard(game.board());

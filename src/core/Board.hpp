@@ -6,8 +6,8 @@
 
 namespace ttt {
 
-// Kwadratowa plansza N x N przechowujaca znaki graczy.
-// Klasa zna wylacznie stan pol - nie zna zasad wygranej (te sa w GameRules).
+// Kwadratowa plansza N x N przechowująca znaki graczy.
+// Klasa zna wyłącznie stan pól - nie zna zasad wygranej (te są w GameRules).
 class Board {
 public:
     explicit Board(int size = 3);
@@ -21,7 +21,7 @@ public:
     bool isEmpty(int row, int col) const;
     bool isFull() const;
 
-    // Liczba zajetych pol - przydatna m.in. dla AI.
+    // Liczba zajętych pól - przydatna m.in. dla AI.
     int filledCount() const { return filled_; }
 
     void clear();
